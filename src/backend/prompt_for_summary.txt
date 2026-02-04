@@ -48,12 +48,11 @@ OUTPUT FORMAT REQUIREMENTS
 - No prefaces, explanations, or commentary outside the code block.
 
 === VIDEO_TRANSCRIPT ===
-___VIDEO_TRANSCRIPT___
+{{VIDEO_TRANSCRIPT}}
 === END OF VIDEO_TRANSCRIPT ===
 
 === TASK ===
 Translate the provided video transcript into an awesome, clear, concise, and not overweighted Markdown document that any user can easily understand.
-___TASK___
 === END OF TASK ===
 
 <promise>COMPLETE</promise>
