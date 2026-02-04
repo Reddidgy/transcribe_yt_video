@@ -1,0 +1,173 @@
+{
+  "theme": "Dark Tech",
+  "styles": {
+    "colors": {
+      "primary": "#A8F78B",
+      "background": "#0D1310",
+      "surface": "#16201B",
+      "onSurface": "#FFFFFF",
+      "textPrimary": "#FFFFFF",
+      "textSecondary": "#A0B0A8",
+      "border": "#33403A",
+      "code": {
+        "background": "#1A221E",
+        "text": "#E0E0E0",
+        "keyword": "#C792EA",
+        "tag": "#F07178",
+        "string": "#C3E88D",
+        "comment": "#6A737D"
+      }
+    },
+    "typography": {
+      "fontFamily": "'Manrope', sans-serif",
+      "headings": {
+        "h1": {
+          "fontSize": "72px",
+          "fontWeight": 700,
+          "lineHeight": "1.2",
+          "letterSpacing": "-0.02em"
+        },
+        "h2": {
+          "fontSize": "48px",
+          "fontWeight": 700,
+          "lineHeight": "1.3"
+        },
+        "h3": {
+          "fontSize": "24px",
+          "fontWeight": 600,
+          "lineHeight": "1.4"
+        }
+      },
+      "body": {
+        "fontSize": "16px",
+        "fontWeight": 400,
+        "lineHeight": "1.6"
+      },
+      "link": {
+        "textDecoration": "none",
+        "fontWeight": 500,
+        "color": "inherit"
+      },
+      "label": {
+        "fontSize": "14px",
+        "fontWeight": 600,
+        "textTransform": "uppercase",
+        "color": "primary"
+      }
+    },
+    "spacing": {
+      "baseUnit": "8px",
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "32px",
+      "xl": "64px"
+    },
+    "borderRadius": {
+      "sm": "4px",
+      "md": "8px",
+      "lg": "16px"
+    }
+  },
+  "objects": {
+    "buttons": {
+      "primary": {
+        "backgroundColor": "primary",
+        "color": "#0D1310",
+        "padding": "16px 32px",
+        "borderRadius": "md",
+        "fontWeight": 700,
+        "textTransform": "uppercase",
+        "border": "none",
+        "hover": {
+          "opacity": 0.9
+        }
+      },
+      "secondary": {
+        "backgroundColor": "transparent",
+        "color": "textPrimary",
+        "padding": "16px 0",
+        "fontWeight": 600,
+        "hover": {
+          "color": "primary"
+        }
+      },
+      "tertiary": {
+        "backgroundColor": "transparent",
+        "color": "textPrimary",
+        "padding": "10px 20px",
+        "borderRadius": "md",
+        "border": "1px solid #FFFFFF",
+        "hover": {
+          "backgroundColor": "#FFFFFF",
+          "color": "background"
+        }
+      }
+    },
+    "cards": {
+      "default": {
+        "backgroundColor": "surface",
+        "borderRadius": "lg",
+        "padding": "lg",
+        "border": "1px solid",
+        "borderColor": "border",
+        "boxShadow": "0 0 20px 0 rgba(168, 247, 139, 0.1)"
+      }
+    },
+    "navigation": {
+      "style": "sticky",
+      "backgroundColor": "background",
+      "padding": "md lg",
+      "items": {
+        "color": "textSecondary",
+        "hoverColor": "textPrimary",
+        "activeColor": "primary"
+      }
+    },
+    "codeBlock": {
+      "parent": "cards.default",
+      "header": {
+        "tabs": {
+          "active": {
+            "color": "textPrimary"
+          },
+          "inactive": {
+            "color": "textSecondary"
+          }
+        }
+      },
+      "body": {
+        "backgroundColor": "code.background",
+        "padding": "md",
+        "borderRadius": "md"
+      }
+    },
+    "icons": {
+      "style": "outline",
+      "size": "24px",
+      "color": "primary"
+    }
+  },
+  "ux": {
+    "animations": {
+      "onScroll": "fade-in, slide-up",
+      "hover": "lift, scale, glow",
+      "pageLoad": "subtle fade-in"
+    },
+    "interactions": {
+      "headlineCursor": {
+        "element": "h1",
+        "effect": "blinking vertical bar '|'",
+        "color": "primary"
+      },
+      "copyToClipboard": {
+        "trigger": "click on copy icon",
+        "feedback": "icon changes state, tooltip shows 'Copied!'"
+      },
+      "tabbedContent": {
+        "trigger": "click on tab",
+        "effect": "content in panel updates without page reload"
+      }
+    }
+  }
+}
