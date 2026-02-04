@@ -152,7 +152,7 @@ const App = () => {
             </main>
 
             <footer className="mt-auto pt-12 text-textSecondary/40 text-sm">
-                &copy; 2024 Transcribe YT Service. Built for high performance.
+                &copy; 2026 Transcribe YT Service by @Reddidgy
             </footer>
         </div>
     );
