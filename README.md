@@ -29,6 +29,19 @@ This project provides a service to transcribe YouTube videos and use LLMs to gen
     cd src/frontend
     npm install
     ```
+4.  Run frontend in development mode:
+    ```bash
+    npm run dev
+    ```
+
+## Frontend Design System
+
+The frontend follows the **Dark Tech** design system defined in [uiux_scheme.json](file:///c:/Users/Rodion/git/transcribe_yt_video/src/frontend/components/uiux_scheme.json).
+
+-   **Primary Color**: `#A8F78B` (Lime Green)
+-   **Background**: Highly optimized dark theme with premium radial gradients.
+-   **Typography**: Manrope (Modern sans-serif).
+-   **Animations**: Framer Motion for premium transitions and effects.
 
 ## Versioning
 
