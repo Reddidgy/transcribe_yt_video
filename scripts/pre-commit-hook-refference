@@ -1,0 +1,3 @@
+#!/bin/sh
+# Cross-platform pre-commit hook to bump version
+python scripts/bump_version.py
