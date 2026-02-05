@@ -2,19 +2,26 @@ import os
 import sys
 import re
 import subprocess
-import json
 import time
 import logging
 from logging.handlers import RotatingFileHandler
 
 # Setup Logging
 def setup_logger():
-    # Ensure logs directory exists
-    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+    # Ensure logs directory exists (now in the same dir as the script for reliability)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    log_dir = os.path.join(current_dir, "logs")
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
     log_file = os.path.join(log_dir, "transcribe.log")
+
+    # clean log file
+    if os.path.exists(log_file):
+        try:
+            os.remove(log_file)
+        except Exception as e:
+            print(f"Warning: Failed to clean log file: {str(e)}")
 
     logger = logging.getLogger("transcribe_service")
     logger.setLevel(logging.INFO)
@@ -42,7 +49,6 @@ _DEPS_PROCESSED = set()
 def get_site_packages_path():
     try:
         import site
-        # Get usersitepackages or site-packages
         paths = site.getsitepackages() if hasattr(site, 'getsitepackages') else []
         if hasattr(site, 'getusersitepackages'):
             paths.append(site.getusersitepackages())
@@ -52,21 +58,26 @@ def get_site_packages_path():
 
 def ensure_dependencies(dep_name=None, force_upgrade=False):
     global _DEPS_PROCESSED
-    deps = [dep_name] if dep_name else ["yt-dlp"]
+    deps = [dep_name] if dep_name else ["pytubefix", "openai-whisper", "ffmpeg-python", "setuptools"]
 
     for dep in deps:
         if dep in _DEPS_PROCESSED and not force_upgrade:
             continue
 
-        module_name = dep.replace("-", "_")
+        # Import mapping
+        module_map = {
+            "openai-whisper": "whisper",
+            "ffmpeg-python": "ffmpeg"
+        }
+        module_name = module_map.get(dep, dep.replace("-", "_"))
+
         try:
             if force_upgrade: raise ImportError("Forced upgrade requested")
             __import__(module_name)
         except ImportError:
             logger.info(f"Dependency '{dep}' missing or upgrade requested. Attempting install...")
             try:
-                # Use --no-cache-dir to ensure fresh install
-                cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "--no-cache-dir", dep]
+                cmd = [sys.executable, "-m", "pip", "install", "--upgrade", dep]
                 subprocess.run(cmd, check=True, capture_output=True)
                 logger.info(f"Successfully processed '{dep}'.")
 
@@ -80,7 +91,22 @@ def ensure_dependencies(dep_name=None, force_upgrade=False):
                 logger.error(f"Failed to process '{dep}'. Please install manually: {sys.executable} -m pip install {dep}")
                 logger.debug(f"Install error: {str(e)}")
 
+def check_ffmpeg():
+    """Verify that FFmpeg is installed as it's required for Whisper and pytubefix."""
+    try:
+        subprocess.run(["ffmpeg", "-version"], capture_output=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        logger.error("FFmpeg NOT FOUND! It is required for transcription.")
+        if os.name == 'nt':
+            logger.info("Windows: Install via 'winget install ffmpeg' or download from ffmpeg.org")
+        else:
+            logger.info("Ubuntu: Install via 'sudo apt update && sudo apt install ffmpeg'")
+        return False
+
+# Run initial checks
 ensure_dependencies()
+check_ffmpeg()
 
 def extract_video_id(url):
     logger.info(f"Extracting video ID from URL: {url}")
@@ -98,101 +124,54 @@ def extract_video_id(url):
     logger.warning(f"Failed to extract video ID from URL: {url}")
     return None
 
-# Stealth Headers
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-REFERER = "https://www.youtube.com/"
-
-def fetch_via_ytdlp(url, video_id):
-    """Transcription using yt-dlp with Stealth & Path Tracking."""
-    logger.info(f"Attempting transcription via yt-dlp for URL: {url}")
-    env = os.environ.copy()
-
-    def run_ytdlp():
-        prefix = f"sub_{video_id}_{int(time.time())}"
-        # STEALTH: User-Agent and Referer
-        base_cmds = [
-            [sys.executable, "-m", "yt_dlp"],
-            ["yt-dlp"]
-        ]
-        args = [
-            "--write-sub", "--write-auto-sub", "--skip-download",
-            "--sub-langs", "en,ru", "--no-check-certificate", "--geo-bypass",
-            "--ignore-errors", "--user-agent", USER_AGENT,
-            "--add-header", f"Referer:{REFERER}",
-            "-o", prefix, url
-        ]
-
-        for base in base_cmds:
-            try:
-                cmd = base + args
-                logger.debug(f"Trying command: {' '.join(cmd)}")
-                result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', env=env, timeout=90)
-                if result.returncode == 0:
-                    return result, prefix
-            except: continue
-
-        return subprocess.run(["yt-dlp"] + args, capture_output=True, text=True, encoding='utf-8', env=env, timeout=90), prefix
-
-    result, prefix = run_ytdlp()
-
-    if result.returncode != 0 and "yt-dlp" not in _DEPS_PROCESSED:
-        logger.warning(f"yt-dlp failed (code {result.returncode}). Attempting pip update...")
-        try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "--no-cache-dir", "yt-dlp"], capture_output=True, env=env)
-            result, prefix = run_ytdlp()
-        except: pass
-
-    # SURGICAL DISCOVERY: Parse stdout for the actual filename
-    downloaded_file = None
-    if result.stdout:
-        match = re.search(r'\[info\] Writing video subtitles to: (.*\.vtt|.*\.srt)', result.stdout)
-        if match:
-            downloaded_file = match.group(1).strip()
-            logger.info(f"Surgically identified downloaded file: {downloaded_file}")
-
+def fetch_audio_and_transcribe(url, video_id):
+    """Downloads audio via pytubefix and transcribes via OpenAI Whisper."""
+    import pytubefix
+    import whisper
+    
+    temp_audio = None
     try:
-        # Search dirs for the file if surgical discovery failed
-        search_dirs = [".", os.path.dirname(os.path.abspath(__file__))]
-        candidate_files = [downloaded_file] if downloaded_file else []
-
-        if not downloaded_file:
-            for d in search_dirs:
-                if not os.path.exists(d): continue
-                candidate_files.extend([os.path.join(d, f) for f in os.listdir(d) if f.startswith(prefix) and (f.endswith(".vtt") or f.endswith(".srt"))])
-
-        for file_path in candidate_files:
-            if not file_path or not os.path.exists(file_path): continue
-
-            logger.info(f"Processing subtitle file: {file_path}")
-            try:
-                with open(file_path, "r", encoding="utf-8", errors='ignore') as file:
-                    content = file.read()
-
-                # Cleanup VTT / SRT
-                text = re.sub(r'WEBVTT|KIND|LANGUAGE|FILE|NOTE.*', '', content, flags=re.I)
-                text = re.sub(r'\d{2}:\d{2}:\d{2}[,.]\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}[,.]\d{3}.*?\n', '', text)
-                text = re.sub(r'<[^>]+>', '', text)
-                text = " ".join([l.strip() for l in text.splitlines() if l.strip()])
-
-                os.remove(file_path)
-                if text and len(text) > 20: # Sanity check
-                    logger.info("Transcription via yt-dlp SUCCESS!")
-                    return text
-            except Exception as e:
-                logger.warning(f"Error reading {file_path}: {str(e)}")
-
-        # FINAL DIAGNOSTIC
-        if result.returncode == 0:
-            logger.warning("yt-dlp: Code 0 but no usable subtitle content found. Checking available subs...")
-            diag_cmd = [sys.executable, "-m", "yt_dlp", "--list-subs", "--user-agent", USER_AGENT, url]
-            diag_res = subprocess.run(diag_cmd, capture_output=True, text=True, encoding='utf-8', env=env)
-            if diag_res.stdout: logger.info(f"Available subtitles from server IP:\n{diag_res.stdout}")
-
+        logger.info(f"Starting process for Video ID: {video_id}")
+        
+        # Audio Extraction via pytubefix
+        yt = pytubefix.YouTube(url)
+        # Get highest quality audio stream
+        audio_stream = yt.streams.filter(only_audio=True).first()
+        if not audio_stream:
+            logger.error("No audio stream found for this video.")
+            return None
+            
+        logger.info(f"Downloading audio: {yt.title}")
+        temp_audio = audio_stream.download(filename=f"audio_{video_id}.m4a")
+        logger.info(f"Audio downloaded to: {temp_audio}")
+        
+        # STT via Whisper
+        logger.info("Loading Whisper model (base)...")
+        model = whisper.load_model("base")
+        
+        logger.info("Transcribing audio (this may take a minute)...")
+        result = model.transcribe(temp_audio)
+        
+        transcript = result.get("text", "").strip()
+        
+        if transcript:
+            logger.info("Transcription SUCCESS!")
+            return transcript
+        else:
+            logger.warning("Whisper returned empty transcript.")
+            return None
+            
     except Exception as e:
-        logger.error(f"yt-dlp strategy exception: {str(e)}", exc_info=True)
-
-    logger.warning("yt-dlp transcription failed.")
-    return None
+        logger.error(f"Error during audio processing/transcription: {str(e)}", exc_info=True)
+        return None
+    finally:
+        # Cleanup
+        if temp_audio and os.path.exists(temp_audio):
+            try:
+                os.remove(temp_audio)
+                logger.info("Temporary audio file cleaned up.")
+            except Exception as e:
+                logger.warning(f"Failed to delete temp audio {temp_audio}: {str(e)}")
 
 def main():
     logger.info("="*30 + " NEW SESSION " + "="*30)
@@ -206,9 +185,7 @@ def main():
         logger.error(f"Invalid URL: {url}")
         return
 
-    logger.info(f"STARTING PROCESSING: Video ID {video_id}")
-
-    transcript = fetch_via_ytdlp(url, video_id)
+    transcript = fetch_audio_and_transcribe(url, video_id)
 
     if transcript:
         output_file = f"transcript_{video_id}.txt"
@@ -220,7 +197,7 @@ def main():
         except Exception as e:
             logger.error(f"Failed to save output file: {str(e)}", exc_info=True)
     else:
-        logger.error("CRITICAL FAILURE: yt-dlp failed to retrieve a transcript.")
+        logger.error("CRITICAL FAILURE: Failed to retrieve a transcript.")
 
 if __name__ == "__main__":
     try:

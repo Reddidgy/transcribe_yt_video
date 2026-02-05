@@ -1,1 +1,4 @@
-yt-dlp
+pytubefix
+openai-whisper
+ffmpeg-python
+setuptools

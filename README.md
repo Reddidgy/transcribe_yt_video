@@ -3,7 +3,7 @@
 A premium, full-stack application to transcribe YouTube videos and generate AI-ready prompts for summaries and insights.
 
 ## Features
-- **Effortless Transcription**: Convert any YouTube video to text in seconds using robust `yt-dlp` subtitle extraction.
+- **Effortless Transcription**: Convert any YouTube video to text in seconds using OpenAI Whisper AI.
 - **AI-Ready Prompts**: Automatically concatenates transcripts with a world-class translation prompt.
 - **Premium UI**: Dark-themed, high-performance interface with silky-smooth animations.
 - **Robust Configuration**: Environment-based portability for dev, staging, and production.
@@ -12,7 +12,7 @@ A premium, full-stack application to transcribe YouTube videos and generate AI-r
 
 ## Tech Stack
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide React.
-- **Backend**: Python, Flask, Flask-CORS, `yt-dlp`.
+- **Backend**: Python, Flask, Flask-CORS, `pytubefix`, `openai-whisper`.
 
 ## Project Structure
 - `src/backend/api`: Flask server and logging logic.
@@ -67,9 +67,11 @@ These scripts will automatically build the frontend production assets and launch
 ---
 
 ## Troubleshooting (Remote Linux / Ubuntu)
-- If transcription fails on a remote server, it is usually due to missing subtitles or being blocked by YouTube.
-- The script `src/backend/transcribe_service/transcribe.py` uses aggressive stealth techniques (headers, User-Agent) to bypass many common blocks.
-- If you see `yt-dlp` missing errors, ensure it is installed correctly. The script handles self-healing for missing dependencies automatically.
+- If transcription fails, ensure **FFmpeg** is installed on your system.
+    - **Ubuntu 20.04**: `sudo apt update && sudo apt install ffmpeg`
+    - **Windows**: `winget install ffmpeg`
+- If you see memory errors, ensure the server has at least 2GB of RAM to load the Whisper `base` model.
+- The script handles `pytubefix` and `whisper` installations automatically if permissions allow.
 
 ## Automated Versioning
 The project uses an automated versioning system. Every time you commit, a Git pre-commit hook runs `scripts/bump_version.py` to increment the patch version. 
