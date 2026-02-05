@@ -66,6 +66,30 @@ These scripts will automatically build the frontend production assets and launch
 
 ---
 
+## Docker Support
+
+The backend API and transcription service can be run using Docker Compose.
+
+### Quick Start
+1. Ensure Docker and Docker Compose are installed.
+2. Build and start the backend:
+   ```bash
+   docker-compose up --build
+   ```
+
+### Volume Mappings
+The following volumes are mapped to ensure data persistence:
+- `src/backend/api/logs`: API activity logs.
+- `src/backend/api/user_visits_logs`: Visit tracking data.
+- `src/backend/transcribe_service/logs`: Transcription process logs.
+
+### Environment Configuration
+The backend respects the `.env` file at the root. You can configure:
+- `PORT`: The port on which the API will be accessible (default: 4520).
+- `HOST`: The host to bind to (default: 0.0.0.0).
+
+---
+
 ## Troubleshooting (Remote Linux / Ubuntu)
 - If transcription fails, ensure **FFmpeg** is installed on your system.
     - **Ubuntu 20.04**: `sudo apt update && sudo apt install ffmpeg`
