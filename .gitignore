@@ -6,3 +6,4 @@
 /src/backend/api/user_visits_logs/
 **/.env
 /src/frontend/dist/
+/src/backend/transcribe_service/logs/
