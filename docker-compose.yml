@@ -1,0 +1,20 @@
+version: '3.3'
+
+services:
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    ports:
+      - "${API_PORT:-4520}:4520"
+    env_file:
+      - ./src/backend/.env
+    volumes:
+    networks:
+      - prompts-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4520/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
