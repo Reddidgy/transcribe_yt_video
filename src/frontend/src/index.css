@@ -11,7 +11,7 @@
 @layer base {
   body {
     @apply bg-background text-textPrimary;
-    background-image: 
+    background-image:
       radial-gradient(circle at 50% -20%, rgba(168, 247, 139, 0.05) 0%, transparent 50%),
       radial-gradient(circle at 0% 100%, rgba(168, 247, 139, 0.02) 0%, transparent 40%);
     background-attachment: fixed;
@@ -22,9 +22,11 @@
   ::-webkit-scrollbar {
     width: 8px;
   }
+
   ::-webkit-scrollbar-track {
     @apply bg-background;
   }
+
   ::-webkit-scrollbar-thumb {
     @apply bg-border rounded-full hover:bg-textSecondary transition-colors;
   }
@@ -34,7 +36,7 @@
   .premium-card {
     @apply bg-surface rounded-lg p-lg border border-border shadow-premium backdrop-blur-sm;
   }
-  
+
   .btn-primary {
     @apply bg-primary text-[#0D1310] px-8 py-4 rounded-md font-bold uppercase tracking-wider transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
   }

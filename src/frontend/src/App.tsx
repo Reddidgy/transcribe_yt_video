@@ -12,6 +12,9 @@ const App = () => {
     const [visitsCount, setVisitsCount] = useState<number | null>(null);
     const initializedRef = useRef(false);
 
+    const [isZooming, setIsZooming] = useState(false);
+    const [isGlitching, setIsGlitching] = useState(false);
+
     // Headline cursor animation
     useEffect(() => {
         const interval = setInterval(() => {
@@ -91,8 +94,37 @@ const App = () => {
         }
     };
 
+    const handleLinkClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsZooming(true);
+        setIsGlitching(true);
+
+        // Wait for ultra-intensity sequence to complete
+        setTimeout(() => {
+            setIsZooming(false);
+            setIsGlitching(false);
+            window.open('https://t.me/reddidgy', '_blank', 'noopener,noreferrer');
+        }, 1200);
+    };
+
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 sm:p-12">
+        <motion.div
+            className="min-h-screen flex flex-col items-center justify-center p-6 sm:p-12 overflow-hidden bg-background relative"
+            animate={{
+                scale: isZooming ? 1.5 : 1,
+                rotate: isGlitching ? [0, -2, 2, -2, 2, -1, 1, 0] : 0,
+                filter: isGlitching
+                    ? ['brightness(1) contrast(1)', 'brightness(1.5) contrast(1.2) hue-rotate(90deg)', 'brightness(2) contrast(1.5) hue-rotate(180deg)', 'brightness(1) contrast(1) hue-rotate(0deg)']
+                    : 'brightness(1) contrast(1) hue-rotate(0deg)'
+            }}
+            transition={{
+                duration: isGlitching ? 1.2 : 0.5,
+                ease: "easeInOut"
+            }}
+        >
+            {isGlitching && (
+                <div className="fixed inset-0 z-[100] pointer-events-none bg-primary/10 mix-blend-overlay animate-pulse" />
+            )}
             {/* Navigation - Logic could be expanded here */}
             <nav className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-50">
                 <div className="flex items-center gap-2">
@@ -103,7 +135,7 @@ const App = () => {
                 </div>
             </nav>
 
-            <main className="w-full max-w-4xl flex flex-col items-center">
+            <main className="w-full max-w-4xl flex flex-col items-center flex-1 py-20">
                 {/* Hero Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -194,9 +226,25 @@ const App = () => {
                 </AnimatePresence>
             </main>
 
-            <footer className="mt-auto pt-12 text-textSecondary/40 text-sm w-full flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <span>&copy; 2026 Transcribe YT Service by @Reddidgy</span>
+            <footer className="mt-auto py-8 text-textSecondary/40 text-sm w-full grid grid-cols-3 items-center">
+                <div className="text-left font-mono">
+                    {version && `v${version}`}
+                </div>
+
+                <div className="text-center">
+                    <span>&copy; 2026 Transcribe YT Service by </span>
+                    <a
+                        href="https://t.me/reddidgy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleLinkClick}
+                        className="text-primary hover:text-primary/80 transition-colors font-semibold"
+                    >
+                        @Reddidgy
+                    </a>
+                </div>
+
+                <div className="flex justify-end">
                     {visitsCount !== null && (
                         <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 font-mono text-[11px] tracking-wider uppercase">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -204,9 +252,8 @@ const App = () => {
                         </span>
                     )}
                 </div>
-                {version && <span className="font-mono">v{version}</span>}
             </footer>
-        </div>
+        </motion.div>
     );
 };
 
