@@ -52,7 +52,7 @@ def get_site_packages_path():
 
 def ensure_dependencies(dep_name=None, force_upgrade=False):
     global _DEPS_PROCESSED
-    deps = [dep_name] if dep_name else ["youtube-transcript-api", "yt-dlp"]
+    deps = [dep_name] if dep_name else ["yt-dlp"]
 
     for dep in deps:
         if dep in _DEPS_PROCESSED and not force_upgrade:
@@ -63,14 +63,10 @@ def ensure_dependencies(dep_name=None, force_upgrade=False):
             if force_upgrade: raise ImportError("Forced upgrade requested")
             __import__(module_name)
         except ImportError:
-            logger.info(f"Dependency '{dep}' missing or upgrade requested. Attempting AGGRESSIVE install...")
+            logger.info(f"Dependency '{dep}' missing or upgrade requested. Attempting install...")
             try:
-                # Use --force-reinstall and --no-cache-dir to bypass environment locks
-                # Pin youtube-transcript-api to a known-good version to avoid name-collision / broken wheels
-                dep_to_install = dep
-                if dep == "youtube-transcript-api":
-                    dep_to_install = "youtube-transcript-api==0.6.2"
-                cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", "--no-cache-dir", dep_to_install]
+                # Use --no-cache-dir to ensure fresh install
+                cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "--no-cache-dir", dep]
                 subprocess.run(cmd, check=True, capture_output=True)
                 logger.info(f"Successfully processed '{dep}'.")
 
@@ -83,39 +79,6 @@ def ensure_dependencies(dep_name=None, force_upgrade=False):
             except Exception as e:
                 logger.error(f"Failed to process '{dep}'. Please install manually: {sys.executable} -m pip install {dep}")
                 logger.debug(f"Install error: {str(e)}")
-
-        # Post-check: make sure we actually got the expected library (some environments install a conflicting package)
-        if dep == "youtube-transcript-api":
-            try:
-                from youtube_transcript_api import YouTubeTranscriptApi  # type: ignore
-                has_expected_api = hasattr(YouTubeTranscriptApi, "get_transcript") or hasattr(YouTubeTranscriptApi, "list_transcripts")
-                if not has_expected_api:
-                    logger.warning(
-                        "Detected unexpected 'youtube_transcript_api' package (missing expected APIs). "
-                        "Forcing reinstall of a known-good version..."
-                    )
-                    cmd = [
-                        sys.executable,
-                        "-m",
-                        "pip",
-                        "install",
-                        "--upgrade",
-                        "--force-reinstall",
-                        "--no-cache-dir",
-                        "youtube-transcript-api==0.6.2",
-                    ]
-                    subprocess.run(cmd, check=True, capture_output=True)
-                    nuclear_reload(["youtube_transcript_api"])
-                    _DEPS_PROCESSED.add(dep)
-            except Exception as e:
-                logger.warning(f"Post-check for youtube-transcript-api failed: {str(e)}")
-
-def nuclear_reload(module_names):
-    """Deep reload by clearing sys.modules first."""
-    for name in list(sys.modules.keys()):
-        for target in module_names:
-            if name == target or name.startswith(target + "."):
-                del sys.modules[name]
 
 ensure_dependencies()
 
@@ -140,8 +103,8 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 REFERER = "https://www.youtube.com/"
 
 def fetch_via_ytdlp(url, video_id):
-    """Strategy C: yt-dlp fallback with Stealth & Path Tracking."""
-    logger.info(f"Attempting Strategy C: yt-dlp fallback for URL: {url}")
+    """Transcription using yt-dlp with Stealth & Path Tracking."""
+    logger.info(f"Attempting transcription via yt-dlp for URL: {url}")
     env = os.environ.copy()
 
     def run_ytdlp():
@@ -173,16 +136,15 @@ def fetch_via_ytdlp(url, video_id):
     result, prefix = run_ytdlp()
 
     if result.returncode != 0 and "yt-dlp" not in _DEPS_PROCESSED:
-        logger.warning(f"yt-dlp failed (code {result.returncode}). Attempting AGGRESSIVE pip update...")
+        logger.warning(f"yt-dlp failed (code {result.returncode}). Attempting pip update...")
         try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", "--no-cache-dir", "yt-dlp"], capture_output=True, env=env)
+            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "--no-cache-dir", "yt-dlp"], capture_output=True, env=env)
             result, prefix = run_ytdlp()
         except: pass
 
     # SURGICAL DISCOVERY: Parse stdout for the actual filename
     downloaded_file = None
     if result.stdout:
-        # Look for the "Writing video subtitles to: <file>" line
         match = re.search(r'\[info\] Writing video subtitles to: (.*\.vtt|.*\.srt)', result.stdout)
         if match:
             downloaded_file = match.group(1).strip()
@@ -213,23 +175,23 @@ def fetch_via_ytdlp(url, video_id):
                 text = " ".join([l.strip() for l in text.splitlines() if l.strip()])
 
                 os.remove(file_path)
-                if text and len(text) > 20: # Sanity check: must be longer than just title
-                    logger.info("Strategy C SUCCESS!")
+                if text and len(text) > 20: # Sanity check
+                    logger.info("Transcription via yt-dlp SUCCESS!")
                     return text
             except Exception as e:
                 logger.warning(f"Error reading {file_path}: {str(e)}")
 
-        # FINAL DIAGNOSTIC: If all failed, log a sub list check
+        # FINAL DIAGNOSTIC
         if result.returncode == 0:
-            logger.warning("Strategy C: Code 0 but no usable subtitle content found. Checking available subs...")
+            logger.warning("yt-dlp: Code 0 but no usable subtitle content found. Checking available subs...")
             diag_cmd = [sys.executable, "-m", "yt_dlp", "--list-subs", "--user-agent", USER_AGENT, url]
             diag_res = subprocess.run(diag_cmd, capture_output=True, text=True, encoding='utf-8', env=env)
             if diag_res.stdout: logger.info(f"Available subtitles from server IP:\n{diag_res.stdout}")
 
     except Exception as e:
-        logger.error(f"Strategy C exception: {str(e)}", exc_info=True)
+        logger.error(f"yt-dlp strategy exception: {str(e)}", exc_info=True)
 
-    logger.warning("Strategy C failed.")
+    logger.warning("yt-dlp transcription failed.")
     return None
 
 def main():
@@ -254,13 +216,11 @@ def main():
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write(transcript)
             logger.info(f"SUCCESS! Transcript saved to: {output_file}")
-
-            # Print preview to console via logger
             logger.info("TRANSCRIPT PREVIEW (First 200 chars): " + transcript[:200] + "...")
         except Exception as e:
             logger.error(f"Failed to save output file: {str(e)}", exc_info=True)
     else:
-        logger.error("CRITICAL FAILURE: All extraction methods failed to retrieve a transcript.")
+        logger.error("CRITICAL FAILURE: yt-dlp failed to retrieve a transcript.")
 
 if __name__ == "__main__":
     try:
