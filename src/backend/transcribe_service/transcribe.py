@@ -104,9 +104,15 @@ def check_ffmpeg():
             logger.info("Ubuntu: Install via 'sudo apt update && sudo apt install ffmpeg'")
         return False
 
-# Run initial checks
-ensure_dependencies()
-check_ffmpeg()
+def initialize_service():
+    """Run initial environment checks."""
+    ensure_dependencies()
+    return check_ffmpeg()
+
+if __name__ == "__main__":
+    # Run initial checks only during CLI execution
+    if not initialize_service():
+        sys.exit(1)
 
 def extract_video_id(url):
     logger.info(f"Extracting video ID from URL: {url}")

@@ -81,25 +81,22 @@ def transcribe_video():
         return jsonify({"error": "No videoUrl provided"}), 400
         
     try:
-        # We'll call the transcribe logic here.
-        # For now, let's prepare the integration.
-        from transcribe import extract_video_id, fetch_via_python_api, fetch_via_cli_api, fetch_via_ytdlp
+        from transcribe import extract_video_id, fetch_audio_and_transcribe, initialize_service
+        
+        # Ensure service is initialized (dependencies and ffmpeg check)
+        initialize_service()
         
         video_id = extract_video_id(video_url)
         if not video_id:
             return jsonify({"error": "Invalid YouTube URL"}), 400
             
-        # Prioritized strategies as in transcribe.py
-        transcript = fetch_via_python_api(video_id)
-        if not transcript:
-            transcript = fetch_via_cli_api(video_id)
-        if not transcript:
-            transcript = fetch_via_ytdlp(video_url, video_id)
+        # Call the refactored Whisper-based transcription logic
+        transcript = fetch_audio_and_transcribe(video_url, video_id)
             
         if transcript:
             return jsonify({"video_transcript": transcript})
         else:
-            return jsonify({"error": "Transcription failed"}), 500
+            return jsonify({"error": "Transcription failed. Check backend logs for details."}), 500
             
     except Exception as e:
         log_api_activity('POST', '/transcribe_yt_video', 500, str(e))
