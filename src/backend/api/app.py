@@ -35,6 +35,22 @@ def health_check():
     
     return jsonify({"status": "ok"})
 
+@app.route('/get_version', methods=['GET'])
+def get_version():
+    try:
+        # Version file is at project root (2 levels up from src/backend/api)
+        version_file = os.path.join(current_dir, '..', '..', '..', 'version')
+        if not os.path.exists(version_file):
+            return jsonify({"version": "unknown"}), 404
+            
+        with open(version_file, 'r', encoding='utf-8') as f:
+            version = f.read().strip()
+            
+        return jsonify({"version": version})
+    except Exception as e:
+        log_api_activity('GET', '/get_version', 500, str(e))
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/get_summary_prompt', methods=['GET'])
 def get_summary_prompt():
     try:

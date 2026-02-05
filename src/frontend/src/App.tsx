@@ -8,6 +8,7 @@ const App = () => {
     const [result, setResult] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [cursorVisible, setCursorVisible] = useState(true);
+    const [version, setVersion] = useState<string>('');
 
     // Headline cursor animation
     useEffect(() => {
@@ -15,6 +16,22 @@ const App = () => {
             setCursorVisible(prev => !prev);
         }, 530);
         return () => clearInterval(interval);
+    }, []);
+
+    // Fetch version
+    useEffect(() => {
+        const fetchVersion = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/get_version');
+                if (response.ok) {
+                    const data = await response.json();
+                    setVersion(data.version);
+                }
+            } catch (error) {
+                console.error('Error fetching version:', error);
+            }
+        };
+        fetchVersion();
     }, []);
 
     const handleTranscribe = async () => {
@@ -167,8 +184,9 @@ const App = () => {
                 </AnimatePresence>
             </main>
 
-            <footer className="mt-auto pt-12 text-textSecondary/40 text-sm">
-                &copy; 2026 Transcribe YT Service by @Reddidgy
+            <footer className="mt-auto pt-12 text-textSecondary/40 text-sm w-full flex justify-between items-center">
+                <span>&copy; 2026 Transcribe YT Service by @Reddidgy</span>
+                {version && <span className="font-mono">v{version}</span>}
             </footer>
         </div>
     );
