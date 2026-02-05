@@ -13,4 +13,4 @@ python -m pip install -r requirements.txt
 
 echo [*] Starting Backend Server...
 cd ..\api
-python app.py
+python transcribe_api.py

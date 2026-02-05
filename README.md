@@ -40,7 +40,7 @@ A premium, full-stack application to transcribe YouTube videos and generate AI-r
 1. **Start Backend**:
    ```powershell
    cd src/backend/api
-   python app.py
+   python transcribe_api.py
    ```
 2. **Start Frontend**:
    ```powershell
