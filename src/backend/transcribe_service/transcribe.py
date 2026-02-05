@@ -10,7 +10,7 @@ from logging.handlers import RotatingFileHandler
 # Setup Logging
 def setup_logger():
     # Ensure logs directory exists
-    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 

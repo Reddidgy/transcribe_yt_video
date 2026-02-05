@@ -1,1 +1,0 @@
-directory for transcribe service logs files.
