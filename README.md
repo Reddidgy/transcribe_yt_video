@@ -66,6 +66,11 @@ These scripts will automatically build the frontend production assets and launch
 
 ---
 
+## Troubleshooting (Remote Linux / Ubuntu)
+- If transcription fails on a remote server with errors like `YouTubeTranscriptApi has no attribute ...`, it usually means a **conflicting/broken** `youtube_transcript_api` package is installed in that environment.
+- The script `src/backend/transcribe_service/transcribe.py` now performs a post-install validation and will force-reinstall a known-good `youtube-transcript-api` version when it detects missing expected APIs.
+- If your server blocks pip installs at runtime, install dependencies ahead of time using `src/backend/transcribe_service/requirements.txt`.
+
 ## Automated Versioning
 The project uses an automated versioning system. Every time you commit, a Git pre-commit hook runs `scripts/bump_version.py` to increment the patch version. 
 
