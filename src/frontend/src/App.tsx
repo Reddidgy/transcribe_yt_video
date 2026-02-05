@@ -23,7 +23,7 @@ const App = () => {
         const initApp = async () => {
             try {
                 // Get version
-                const response = await fetch('http://localhost:5000/get_version');
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/get_version`);
                 if (response.ok) {
                     const data = await response.json();
                     setVersion(data.version);
@@ -42,11 +42,8 @@ const App = () => {
         setResult(null);
 
         try {
-            // 1. Log visit/check health
-            await fetch('http://localhost:5000/health');
-
             // 2. Fetch transcript
-            const transcribeResponse = await fetch('http://localhost:5000/transcribe_yt_video', {
+            const transcribeResponse = await fetch(`${import.meta.env.VITE_API_URL}/transcribe_yt_video`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ videoUrl: url }),
@@ -57,7 +54,7 @@ const App = () => {
             const transcript = transcribeData.video_transcript;
 
             // 3. Fetch summary prompt
-            const promptResponse = await fetch('http://localhost:5000/get_summary_prompt');
+            const promptResponse = await fetch(`${import.meta.env.VITE_API_URL}/get_summary_prompt`);
             if (!promptResponse.ok) throw new Error('Failed to fetch summary prompt');
             const promptData = await promptResponse.json();
             const fullPrompt = promptData.summary_prompt;

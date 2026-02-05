@@ -97,4 +97,6 @@ def transcribe_video():
 
 if __name__ == '__main__':
     # Default Flask port is 5000 as per specification
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.getenv('PORT', 5000))
+    host = os.getenv('HOST', '0.0.0.0')
+    app.run(host=host, port=port, debug=True)
