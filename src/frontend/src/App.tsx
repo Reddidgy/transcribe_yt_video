@@ -24,17 +24,33 @@ const App = () => {
         setResult(null);
 
         try {
-            const response = await fetch('http://localhost:5000/transcribe_yt_video', {
+            // 1. Log visit/check health
+            await fetch('http://localhost:5000/health');
+
+            // 2. Fetch transcript
+            const transcribeResponse = await fetch('http://localhost:5000/transcribe_yt_video', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ videoUrl: url }),
             });
 
-            const data = await response.json();
-            setResult(data.insights || 'Transcription completed successfully.');
-        } catch (error) {
-            console.error('Transcription error:', error);
-            setResult('Error: Failed to transcribe video. Please ensure the backend is running.');
+            if (!transcribeResponse.ok) throw new Error('Transcription failed');
+            const transcribeData = await transcribeResponse.json();
+            const transcript = transcribeData.video_transcript;
+
+            // 3. Fetch summary prompt
+            const promptResponse = await fetch('http://localhost:5000/get_summary_prompt');
+            if (!promptResponse.ok) throw new Error('Failed to fetch summary prompt');
+            const promptData = await promptResponse.json();
+            const fullPrompt = promptData.summary_prompt;
+
+            // 4. Concatenate
+            const finalResult = fullPrompt.replace('{{VIDEO_TRANSCRIPT}}', transcript);
+            setResult(finalResult);
+
+        } catch (error: any) {
+            console.error('Workflow error:', error);
+            setResult(`Error: ${error.message || 'Something went wrong'}. Please ensure the backend is running.`);
         } finally {
             setIsProcessing(false);
         }
