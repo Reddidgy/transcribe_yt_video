@@ -104,5 +104,25 @@ To manually update major/minor versions, edit the `version` file at the root.
 
 ---
 
+## Deployment (Remote Server)
+
+### Sub-path Serving
+This application is configured to be served from the `/transcribe_youtube/` sub-path (e.g., `https://domain.com/transcribe_youtube/`).
+
+If you need to change this:
+1.  **Frontend**: Update the `base` property in `src/frontend/vite.config.ts`.
+2.  **Nginx**: Ensure your Nginx `alias` and `rewrite` rules match the new path.
+
+### Example Nginx Config:
+```nginx
+location /transcribe_youtube/ {
+    alias /path/to/project/src/frontend/dist/;
+    rewrite ^/transcribe_youtube/app$ /transcribe_youtube/index.html last;
+    try_files $uri $uri/ =404;
+}
+```
+
+---
+
 ## Author
 Built by @Reddidgy (2026)
