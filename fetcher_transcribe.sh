@@ -17,7 +17,7 @@ if ! command -v git &> /dev/null; then
     exit 1
 fi
 
-# Define the branch name as a variable after confirming we're in a Git repository
+# Define the branch name as a variable after confirming we're in a Git repository!
 BRANCH_NAME=$(git branch --show-current)
 echo "$BRANCH_NAME"
 if [ -z "$BRANCH_NAME" ]; then
