@@ -2,3 +2,5 @@
 *.md
 **/node_modules/
 **/package-lock.json
+/src/backend/api/logs/
+/src/backend/api/user_visits_logs/
