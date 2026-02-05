@@ -8,7 +8,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.join(current_dir, '..', '..', '..')
 sys.path.append(os.path.join(current_dir, '..', 'transcribe_service'))
 
-from logger import log_api_activity, log_unique_visit
+from logger import log_api_activity, log_visit, get_visits_count
 # We'll import transcribe logic later when we ensure it's exportable
 
 app = Flask(__name__)
@@ -29,10 +29,10 @@ def after_request_logging(response):
 @app.route('/get_version', methods=['GET'])
 def get_version():
     try:
-        # Log unique visit
+        # Log visit
         client_ip = request.remote_addr
         user_agent = request.headers.get('User-Agent', 'Unknown')
-        log_unique_visit(client_ip, user_agent)
+        log_visit(client_ip, user_agent)
 
         # Version file is at project root (2 levels up from src/backend/api)
         version_file = os.path.join(current_dir, '..', '..', '..', 'version')
@@ -45,6 +45,15 @@ def get_version():
         return jsonify({"version": version})
     except Exception as e:
         log_api_activity('GET', '/get_version', 500, str(e))
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/get_visits_count', methods=['GET'])
+def get_visits_count_endpoint():
+    try:
+        count = get_visits_count()
+        return jsonify({"visits_count": count})
+    except Exception as e:
+        log_api_activity('GET', '/get_visits_count', 500, str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/get_summary_prompt', methods=['GET'])
@@ -97,6 +106,6 @@ def transcribe_video():
 
 if __name__ == '__main__':
     # Default Flask port is 5000 as per specification
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.getenv('PORT', 4520))
     host = os.getenv('HOST', '0.0.0.0')
     app.run(host=host, port=port, debug=True)

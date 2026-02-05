@@ -18,8 +18,8 @@ def log_api_activity(method, endpoint, status_code, message=""):
     with open(log_file, 'a', encoding='utf-8') as f:
         f.write(log_entry)
 
-def log_unique_visit(ip, user_agent):
-    """Logs unique user visits to src/backend/api/user_visits_logs."""
+def log_visit(ip, user_agent):
+    """Logs every user visit to src/backend/api/user_visits_logs."""
     visit_file = os.path.join(VISITS_DIR, 'visits.json')
     
     visits = []
@@ -30,21 +30,24 @@ def log_unique_visit(ip, user_agent):
         except (json.JSONDecodeError, ValueError):
             visits = []
 
-    # Check for uniqueness based on IP and User-Agent
-    is_unique = True
-    for v in visits:
-        if v.get('ip') == ip and v.get('user_agent') == user_agent:
-            is_unique = False
-            break
-            
-    if is_unique:
-        new_visit = {
-            "ip": ip,
-            "user_agent": user_agent,
-            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        visits.append(new_visit)
-        with open(visit_file, 'w', encoding='utf-8') as f:
-            json.dump(visits, f, indent=4)
-        return True
-    return False
+    new_visit = {
+        "ip": ip,
+        "user_agent": user_agent,
+        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    visits.append(new_visit)
+    with open(visit_file, 'w', encoding='utf-8') as f:
+        json.dump(visits, f, indent=4)
+    return True
+
+def get_visits_count():
+    """Returns the total count of visits from src/backend/api/user_visits_logs/visits.json."""
+    visit_file = os.path.join(VISITS_DIR, 'visits.json')
+    if not os.path.exists(visit_file):
+        return 0
+    try:
+        with open(visit_file, 'r', encoding='utf-8') as f:
+            visits = json.load(f)
+            return len(visits)
+    except (json.JSONDecodeError, ValueError):
+        return 0

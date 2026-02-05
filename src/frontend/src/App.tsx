@@ -9,6 +9,7 @@ const App = () => {
     const [copied, setCopied] = useState(false);
     const [cursorVisible, setCursorVisible] = useState(true);
     const [version, setVersion] = useState<string>('');
+    const [visitsCount, setVisitsCount] = useState<number | null>(null);
 
     // Headline cursor animation
     useEffect(() => {
@@ -18,15 +19,22 @@ const App = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Fetch version on mount
+    // Fetch version and visits count on mount
     useEffect(() => {
         const initApp = async () => {
             try {
-                // Get version
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/get_version`);
-                if (response.ok) {
-                    const data = await response.json();
+                // Get version (also logs visit)
+                const versionResponse = await fetch(`${import.meta.env.VITE_API_URL}/get_version`);
+                if (versionResponse.ok) {
+                    const data = await versionResponse.json();
                     setVersion(data.version);
+                }
+
+                // Get visits count
+                const visitsResponse = await fetch(`${import.meta.env.VITE_API_URL}/get_visits_count`);
+                if (visitsResponse.ok) {
+                    const data = await visitsResponse.json();
+                    setVisitsCount(data.visits_count);
                 }
             } catch (error) {
                 console.error('Error during initialization:', error);
@@ -183,7 +191,15 @@ const App = () => {
             </main>
 
             <footer className="mt-auto pt-12 text-textSecondary/40 text-sm w-full flex justify-between items-center">
-                <span>&copy; 2026 Transcribe YT Service by @Reddidgy</span>
+                <div className="flex items-center gap-4">
+                    <span>&copy; 2026 Transcribe YT Service by @Reddidgy</span>
+                    {visitsCount !== null && (
+                        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 font-mono text-[11px] tracking-wider uppercase">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                            Total Visits: {visitsCount}
+                        </span>
+                    )}
+                </div>
                 {version && <span className="font-mono">v{version}</span>}
             </footer>
         </div>
