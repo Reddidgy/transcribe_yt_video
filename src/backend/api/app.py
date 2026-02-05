@@ -26,18 +26,14 @@ def after_request_logging(response):
     log_api_activity(request.method, request.path, response.status_code)
     return response
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    # Log unique visit
-    client_ip = request.remote_addr
-    user_agent = request.headers.get('User-Agent', 'Unknown')
-    log_unique_visit(client_ip, user_agent)
-    
-    return jsonify({"status": "ok"})
-
 @app.route('/get_version', methods=['GET'])
 def get_version():
     try:
+        # Log unique visit
+        client_ip = request.remote_addr
+        user_agent = request.headers.get('User-Agent', 'Unknown')
+        log_unique_visit(client_ip, user_agent)
+
         # Version file is at project root (2 levels up from src/backend/api)
         version_file = os.path.join(current_dir, '..', '..', '..', 'version')
         if not os.path.exists(version_file):

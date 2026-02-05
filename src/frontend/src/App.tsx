@@ -18,20 +18,21 @@ const App = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Fetch version
+    // Fetch version on mount
     useEffect(() => {
-        const fetchVersion = async () => {
+        const initApp = async () => {
             try {
+                // Get version
                 const response = await fetch('http://localhost:5000/get_version');
                 if (response.ok) {
                     const data = await response.json();
                     setVersion(data.version);
                 }
             } catch (error) {
-                console.error('Error fetching version:', error);
+                console.error('Error during initialization:', error);
             }
         };
-        fetchVersion();
+        initApp();
     }, []);
 
     const handleTranscribe = async () => {
