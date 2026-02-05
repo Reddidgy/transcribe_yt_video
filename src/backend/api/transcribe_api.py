@@ -23,7 +23,8 @@ def before_request_logging():
 
 @app.after_request
 def after_request_logging(response):
-    log_api_activity(request.method, request.path, response.status_code)
+    if request.method != 'OPTIONS':
+        log_api_activity(request.method, request.path, response.status_code)
     return response
 
 @app.route('/get_version', methods=['GET'])

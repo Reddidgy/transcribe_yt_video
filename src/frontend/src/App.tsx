@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Youtube, Sparkles, Loader2, Copy, Check } from 'lucide-react';
 
@@ -10,6 +10,7 @@ const App = () => {
     const [cursorVisible, setCursorVisible] = useState(true);
     const [version, setVersion] = useState<string>('');
     const [visitsCount, setVisitsCount] = useState<number | null>(null);
+    const initializedRef = useRef(false);
 
     // Headline cursor animation
     useEffect(() => {
@@ -21,6 +22,9 @@ const App = () => {
 
     // Fetch version and visits count on mount
     useEffect(() => {
+        if (initializedRef.current) return;
+        initializedRef.current = true;
+
         const initApp = async () => {
             try {
                 // Get version (also logs visit)
