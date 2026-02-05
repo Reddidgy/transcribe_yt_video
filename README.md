@@ -1,50 +1,77 @@
 # Transcribe YT Video Service
 
-## Overview
+A premium, full-stack application to transcribe YouTube videos and generate AI-ready prompts for summaries and insights.
 
-This project provides a service to transcribe YouTube videos and use LLMs to generate summaries, insights, and other requested outputs.
+## Features
+- **Effortless Transcription**: Convert any YouTube video to text in seconds.
+- **AI-Ready Prompts**: Automatically concatenates transcripts with a world-class translation prompt.
+- **Premium UI**: Dark-themed, high-performance interface with silky-smooth animations.
+- **Robust Configuration**: Environment-based portability for dev, staging, and production.
+- **Automated Versioning**: Git-hook powered version increments (currently v0.0.1).
+- **Comprehensive Logging**: Tracks API activity and unique visitor metrics.
 
-## Technology Stack
+## Tech Stack
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide React.
+- **Backend**: Python, Flask, Flask-CORS, YouTube Transcript API.
 
--   **Backend**: Python with Flask
--   **Frontend**: React, TypeScript, Tailwind CSS (Dark Theme)
+## Project Structure
+- `src/backend/api`: Flask server and logging logic.
+- `src/backend/transcribe_service`: Core transcription scripts and prompts.
+- `src/frontend`: React application source code.
+- `scripts`: Utility scripts for versioning and execution.
 
-## Getting Started
+---
+
+## How to Build and Run
 
 ### Prerequisites
+- Node.js (v18+) and npm.
+- Python 3.9+.
+- Git.
 
--   Python 3.x
--   Node.js & npm
--   Git
+### Environment Configuration
+1. **Frontend**: Create `src/frontend/.env` (see `src/frontend/.env.example`).
+   ```text
+   VITE_API_URL=http://localhost:5000
+   ```
+2. **Backend**: Create `.env` in the root (see `.env.example`) to configure `PORT` and `HOST`.
 
-### Installation
+### Development Mode
+1. **Start Backend**:
+   ```powershell
+   cd src/backend/api
+   python app.py
+   ```
+2. **Start Frontend**:
+   ```powershell
+   cd src/frontend
+   npm install
+   npm run dev
+   ```
 
-1.  Clone the repository.
-2.  Install backend dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  Install frontend dependencies:
-    ```bash
-    cd src/frontend
-    npm install
-    ```
-4.  Run frontend in development mode:
-    ```bash
-    npm run dev
-    ```
+### Production Build and Run
+We provide scripts for one-click production setup:
 
-## Frontend Design System
+**Windows (CMD)**:
+```cmd
+.\scripts\build_and_run.bat
+```
 
-The frontend follows the **Dark Tech** design system defined in [uiux_scheme.json](file:///c:/Users/Rodion/git/transcribe_yt_video/src/frontend/components/uiux_scheme.json).
+**Linux/Mac (Bash)**:
+```bash
+bash ./scripts/build_and_run.sh
+```
 
--   **Primary Color**: `#A8F78B` (Lime Green)
--   **Background**: Highly optimized dark theme with premium radial gradients.
--   **Typography**: Manrope (Modern sans-serif).
--   **Animations**: Framer Motion for premium transitions and effects.
+These scripts will automatically build the frontend production assets and launch the backend server.
 
-## Versioning
+---
 
-This project uses an automated versioning system. The version is incremented on every commit. See [VERSIONING.md](file:///c:/Users/Rodion/git/transcribe_yt_video/VERSIONING.md) for details.
+## Automated Versioning
+The project uses an automated versioning system. Every time you commit, a Git pre-commit hook runs `scripts/bump_version.py` to increment the patch version. 
 
-Current Version: 0.0.1 (Will be 0.0.2 on next commit)
+To manually update major/minor versions, edit the `version` file at the root.
+
+---
+
+## Author
+Built by @Reddidgy (2026)
