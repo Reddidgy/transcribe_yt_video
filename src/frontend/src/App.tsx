@@ -89,7 +89,7 @@ const App = () => {
                         <span className="text-primary italic">Any Video</span>{cursorVisible ? '|' : ' '}
                     </h1>
                     <p className="text-textSecondary text-lg max-w-2xl mx-auto">
-                        Paste a YouTube URL and get AI-powered transcription and key insights in seconds.
+                        Paste a YouTube URL and get video transcription with the prompt to have video summary.
                     </p>
                 </motion.div>
 
@@ -147,7 +147,7 @@ const App = () => {
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-xl font-semibold flex items-center gap-2">
                                         <Sparkles size={20} className="text-primary" />
-                                        Key Insights
+                                        Video Transcript + Prompt for AI
                                     </h3>
                                     <button
                                         onClick={handleCopy}
