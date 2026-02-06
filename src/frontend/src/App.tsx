@@ -170,12 +170,12 @@ const App = () => {
             )}
             {/* Navigation - Logic could be expanded here */}
             <nav className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-50">
-                <div className="flex items-center gap-2">
+                <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
                         <Youtube size={18} className="text-background" />
                     </div>
                     <span className="font-bold text-lg tracking-tight">TRANSCRIBE<span className="text-primary">YT</span></span>
-                </div>
+                </a>
             </nav>
 
             <main className="w-full max-w-4xl flex flex-col items-center flex-1 py-20">
