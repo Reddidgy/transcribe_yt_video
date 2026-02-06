@@ -5,5 +5,5 @@
 /src/backend/hard_api/logs/
 /src/backend/hard_api/user_visits_logs/
 **/.env
-/src/frontend/dist/
+#/src/frontend/dist/
 /src/backend/transcribe_service/logs/
