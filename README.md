@@ -2,6 +2,8 @@
 
 A premium, full-stack application to transcribe YouTube videos and generate AI-ready prompts for summaries and insights.
 
+![Project Demo GIF](./.github/assets/preview.gif)
+
 ## Features
 - **Effortless Transcription**: Convert any YouTube video to text in seconds using OpenAI Whisper AI.
 - **AI-Ready Prompts**: Automatically concatenates transcripts with a world-class translation prompt.
