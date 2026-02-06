@@ -21,7 +21,7 @@ You MUST structure the output document with the following sections in this exact
 | :--- | :--- |
 | Brief Description | A concise summary of what the video is about. |
 | Key Takeaways | A bulleted list of the main ideas and conclusions from the video. |
-| Chapter Breakdown | A breakdown of the video into logical chapters, each with its corresponding start timestamp (e.g., 00:00, 02:15). |
+| Chapter Breakdown | A breakdown of the video into logical chapters |
 | Key Quotes | The most important or memorable phrases from the video. |
 | Mentioned Resources | A list of any books, articles, tools, or other resources mentioned. |
 | Who is this video for? | A description of the ideal audience for this video. |
