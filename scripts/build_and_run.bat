@@ -11,6 +11,6 @@ echo [*] Setting up Backend...
 cd ..\backend\transcribe_service
 python -m pip install -r requirements.txt
 
-echo [*] Starting Backend Server...
-cd ..\api
-python transcribe_api.py
+echo [*] Starting Public API Server...
+cd ..\public_api
+python public_transcribe_api.py

@@ -15,7 +15,8 @@ A premium, full-stack application to transcribe YouTube videos and generate AI-r
 - **Backend**: Python, Flask, Flask-CORS, `pytubefix`, `openai-whisper`.
 
 ## Project Structure
-- `src/backend/api`: Flask server and logging logic.
+- `src/backend/public_api`: Public-facing Flask server for general requests and transcription proxying.
+- `src/backend/hard_api`: Transcription engine (Whisper) that handles the heavy lifting.
 - `src/backend/transcribe_service`: Core transcription scripts and prompts.
 - `src/frontend`: React application source code.
 - `scripts`: Utility scripts for versioning and execution.
@@ -32,61 +33,35 @@ A premium, full-stack application to transcribe YouTube videos and generate AI-r
 ### Environment Configuration
 1. **Frontend**: Create `src/frontend/.env` (see `src/frontend/.env.example`).
    ```text
-   VITE_API_URL=http://localhost:5000
+   VITE_API_URL=http://localhost:4520
    ```
-2. **Backend**: Create `.env` in the root (see `.env.example`) to configure `PORT` and `HOST`.
+2. **Backend**: Create `.env` in the root (see `.env.example`).
+   ```text
+   PORT=4520
+   HOST=0.0.0.0
+   HARD_API_HOST=http://<hard_api_machine_ip>:4520
+   ```
 
-### Development Mode
-1. **Start Backend**:
+### Running the Services
+
+This application uses a dual-API architecture. You must start the appropriate API on each machine.
+
+1. **Start Hard API (Transcription Machine)**:
    ```powershell
-   cd src/backend/api
+   cd src/backend/hard_api
    python transcribe_api.py
    ```
-2. **Start Frontend**:
-   ```powershell
-   cd src/frontend
-   npm install
-   npm run dev
-   ```
-
-### Production Build and Run
-We provide scripts for one-click production setup:
-
-**Windows (CMD)**:
-```cmd
-.\scripts\build_and_run.bat
-```
-
-**Linux/Mac (Bash)**:
-```bash
-bash ./scripts/build_and_run.sh
-```
-
-These scripts will automatically build the frontend production assets and launch the backend server.
-
----
-
-## Docker Support
-
-The backend API and transcription service can be run using Docker Compose.
-
-### Quick Start
-1. Ensure Docker and Docker Compose are installed.
-2. Build and start the backend:
-   ```bash
-   docker-compose up --build
-   ```
-
-### Volume Mappings
-The following volumes are mapped to ensure data persistence:
-- `src/backend/api/logs`: API activity logs.
-- `src/backend/api/user_visits_logs`: Visit tracking data.
-- `src/backend/transcribe_service/logs`: Transcription process logs.
-
-### Environment Configuration
-The backend respects the `.env` file at the root. You can configure:
-- `PORT`: The port on which the API will be accessible (default: 4520).
-- `HOST`: The host to bind to (default: 0.0.0.0).
+2. **Start Public API & Frontend (Public-Facing Machine)**:
+   - **Backend**:
+     ```powershell
+     cd src/backend/public_api
+     python public_transcribe_api.py
+     ```
+   - **Frontend**:
+     ```powershell
+     cd src/frontend
+     npm run dev
+     ```
 
 ---
 
@@ -94,7 +69,7 @@ The backend respects the `.env` file at the root. You can configure:
 - If transcription fails, ensure **FFmpeg** is installed on your system.
     - **Ubuntu 20.04**: `sudo apt update && sudo apt install ffmpeg`
     - **Windows**: `winget install ffmpeg`
-- If you see memory errors, ensure the server has at least 2GB of RAM to load the Whisper `base` model.
+- If you see memory errors, ensure the transcription server has at least 2GB of RAM to load the Whisper `base` model.
 - The script handles `pytubefix` and `whisper` installations automatically if permissions allow.
 
 ## Automated Versioning
