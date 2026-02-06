@@ -4,11 +4,15 @@ import threading
 import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from dotenv import load_dotenv
 
 # Add parent directories to sys.path to allow imports from transcribe_service
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.join(current_dir, '..', '..', '..')
+project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
 sys.path.append(os.path.join(current_dir, '..', 'transcribe_service'))
+
+# Load environment variables from project root
+load_dotenv(os.path.join(project_root, '.env'))
 
 from logger import log_api_activity, log_visit, get_visits_count
 

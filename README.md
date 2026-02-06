@@ -44,19 +44,18 @@ A premium, full-stack application to transcribe YouTube videos and generate AI-r
 
 ### Running the Services
 
-This application uses a dual-API architecture. You must start the appropriate API on each machine.
+This application uses a dual-API architecture. You can start the appropriate API on each machine from the project root using the provided scripts.
+
+**Note**: These scripts are location-independent and can be run from anywhere.
 
 1. **Start Hard API (Transcription Machine)**:
-   ```powershell
-   cd src/backend/hard_api
-   python transcribe_api.py
-   ```
+   - **Windows**: Run `run_hard_api.bat`
+   - **Linux**: Run `bash scripts/run_hard_api.sh` (if you create one) or `python3 src/backend/hard_api/transcribe_api.py`
+
 2. **Start Public API & Frontend (Public-Facing Machine)**:
    - **Backend**:
-     ```powershell
-     cd src/backend/public_api
-     python public_transcribe_api.py
-     ```
+     - **Windows**: `python src/backend/public_api/public_transcribe_api.py`
+     - **Linux**: Run `./run_public_api.sh`
    - **Frontend**:
      ```powershell
      cd src/frontend

@@ -2,11 +2,15 @@ import os
 import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from dotenv import load_dotenv
 
 # Add parent directories to sys.path to allow imports from transcribe_service
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.join(current_dir, '..', '..', '..')
+project_root = os.path.abspath(os.path.join(current_dir, '..', '..', '..'))
 sys.path.append(os.path.join(current_dir, '..', 'transcribe_service'))
+
+# Load environment variables from project root
+load_dotenv(os.path.join(project_root, '.env'))
 
 from logger import log_api_activity
 
@@ -22,6 +26,26 @@ def after_request_logging(response):
     if request.method != 'OPTIONS':
         log_api_activity(request.method, request.path, response.status_code)
     return response
+
+@app.route('/get_version', methods=['GET'])
+def get_version():
+    try:
+        # Log visit
+        client_ip = request.remote_addr
+        user_agent = request.headers.get('User-Agent', 'Unknown')
+
+        # Version file is at project root
+        version_file = os.path.join(current_dir, '..', '..', '..', 'version')
+        if not os.path.exists(version_file):
+            return jsonify({"version": "unknown"}), 404
+
+        with open(version_file, 'r', encoding='utf-8') as f:
+            version = f.read().strip()
+
+        return jsonify({"version": version})
+    except Exception as e:
+        log_api_activity('GET', '/get_version', 500, str(e))
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/transcribe_yt_video', methods=['POST'])
 def transcribe_video():
