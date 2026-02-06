@@ -57,16 +57,47 @@ const App = () => {
         setResult(null);
 
         try {
-            // 2. Fetch transcript
+            // 1. Trigger transcription and get task_id
             const transcribeResponse = await fetch(`${import.meta.env.VITE_API_URL}/transcribe_yt_video`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ videoUrl: url }),
             });
 
-            if (!transcribeResponse.ok) throw new Error('Transcription failed');
-            const transcribeData = await transcribeResponse.json();
-            const transcript = transcribeData.video_transcript;
+            if (!transcribeResponse.ok) {
+                const errorData = await transcribeResponse.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to start transcription');
+            }
+
+            const { task_id } = await transcribeResponse.json();
+
+            // 2. Polling loop
+            let transcript = null;
+            let attempts = 0;
+            const maxAttempts = 600; // 30 minutes max (3s * 600)
+
+            while (!transcript && attempts < maxAttempts) {
+                attempts++;
+                // Wait 3 seconds before next poll
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                const statusResponse = await fetch(`${import.meta.env.VITE_API_URL}/transcribe_status/${task_id}`);
+                if (!statusResponse.ok) {
+                    throw new Error('Failed to check transcription status');
+                }
+
+                const statusData = await statusResponse.json();
+
+                if (statusData.status === 'completed') {
+                    transcript = statusData.result;
+                } else if (statusData.status === 'error') {
+                    throw new Error(statusData.error || 'Transcription failed');
+                }
+            }
+
+            if (!transcript) {
+                throw new Error('Transcription timed out after 30 minutes');
+            }
 
             // 3. Fetch summary prompt
             const promptResponse = await fetch(`${import.meta.env.VITE_API_URL}/get_summary_prompt`);

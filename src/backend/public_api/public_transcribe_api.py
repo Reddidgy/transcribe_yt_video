@@ -1,6 +1,7 @@
 import os
 import sys
 import threading
+import uuid
 import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -22,6 +23,11 @@ CORS(app)
 
 PROMPT_FILE = os.path.join(current_dir, '..', 'transcribe_service', 'prompt_for_summary.txt')
 
+# In-memory storage for tasks status and results
+# Format: { task_id: { "status": "processing" | "completed" | "error", "result": "...", "error": "..." } }
+tasks = {}
+tasks_lock = threading.Lock()
+
 # Sequential queue using a semaphore
 transcription_semaphore = threading.Semaphore(1)
 
@@ -35,7 +41,7 @@ def after_request_logging(response):
         payload = None
         if request.is_json:
             payload = request.get_json(silent=True)
-            # Mask sensitive data if any (none expected here yet, but good practice)
+            # Mask sensitive data if any
         log_api_activity('public_api', request.method, request.path, response.status_code, payload=payload)
     return response
 
@@ -47,7 +53,6 @@ def get_version():
         user_agent = request.headers.get('User-Agent', 'Unknown')
         log_visit(client_ip, user_agent)
 
-        # Version file is at project root
         version_file = os.path.join(current_dir, '..', '..', '..', 'version')
         if not os.path.exists(version_file):
             return jsonify({"version": "unknown"}), 404
@@ -84,22 +89,19 @@ def get_summary_prompt():
         log_api_activity('public_api', 'GET', '/get_summary_prompt', 500, str(e))
         return jsonify({"error": str(e)}), 500
 
-@app.route('/transcribe_yt_video', methods=['POST'])
-def transcribe_video():
-    data = request.json
-    video_url = data.get('videoUrl')
-    
-    if not video_url:
-        return jsonify({"error": "No videoUrl provided"}), 400
-        
-    # Queue management
+def run_transcription_background(task_id, video_url):
+    """Background thread function to handle Hard API transcription with semaphore."""
+    with tasks_lock:
+        tasks[task_id]["status"] = "processing"
+
     acquired = transcription_semaphore.acquire(blocking=True)
     try:
         hard_api_host = os.getenv('HARD_API_HOST')
         if not hard_api_host:
-            return jsonify({"error": "HARD_API_HOST not configured"}), 500
+            with tasks_lock:
+                tasks[task_id] = {"status": "error", "error": "HARD_API_HOST not configured"}
+            return
             
-        # Ensure the URL is properly formatted for the Hard API
         hard_api_url = f"{hard_api_host.rstrip('/')}/transcribe_yt_video"
         
         # Proxy request to Hard API
@@ -109,22 +111,53 @@ def transcribe_video():
             timeout=1800  # Long timeout for transcription
         )
         
-        if response.status_code == 200:
-            return jsonify(response.json())
-        else:
-            error_msg = response.json().get('error', 'Hard API request failed')
-            log_api_activity('public_api', 'POST', '/transcribe_yt_video', response.status_code, error_msg, payload={"videoUrl": video_url})
-            return jsonify({"error": error_msg}), response.status_code
-            
+        with tasks_lock:
+            if response.status_code == 200:
+                tasks[task_id] = {"status": "completed", "result": response.json().get("video_transcript")}
+            else:
+                error_msg = response.json().get('error', 'Hard API request failed')
+                tasks[task_id] = {"status": "error", "error": error_msg}
+                log_api_activity('public_api', 'BACKGROUND_POST', '/transcribe_yt_video', response.status_code, error_msg, payload={"videoUrl": video_url})
+                
     except requests.exceptions.RequestException as e:
-        log_api_activity('public_api', 'POST', '/transcribe_yt_video', 500, str(e), payload={"videoUrl": video_url})
-        return jsonify({"error": f"Failed to connect to Hard API: {str(e)}"}), 500
+        with tasks_lock:
+            tasks[task_id] = {"status": "error", "error": f"Failed to connect to Hard API: {str(e)}"}
+        log_api_activity('public_api', 'BACKGROUND_POST', '/transcribe_yt_video', 500, str(e), payload={"videoUrl": video_url})
     except Exception as e:
-        log_api_activity('public_api', 'POST', '/transcribe_yt_video', 500, str(e), payload={"videoUrl": video_url})
-        return jsonify({"error": str(e)}), 500
+        with tasks_lock:
+            tasks[task_id] = {"status": "error", "error": str(e)}
+        log_api_activity('public_api', 'BACKGROUND_POST', '/transcribe_yt_video', 500, str(e), payload={"videoUrl": video_url})
     finally:
         if acquired:
             transcription_semaphore.release()
+
+@app.route('/transcribe_yt_video', methods=['POST'])
+def transcribe_video():
+    data = request.json
+    video_url = data.get('videoUrl')
+    
+    if not video_url:
+        return jsonify({"error": "No videoUrl provided"}), 400
+        
+    task_id = str(uuid.uuid4())
+    
+    with tasks_lock:
+        tasks[task_id] = {"status": "pending"}
+        
+    # Start background thread
+    threading.Thread(target=run_transcription_background, args=(task_id, video_url)).start()
+    
+    return jsonify({"task_id": task_id}), 202
+
+@app.route('/transcribe_status/<task_id>', methods=['GET'])
+def get_transcribe_status(task_id):
+    with tasks_lock:
+        task = tasks.get(task_id)
+        
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+        
+    return jsonify(task)
 
 if __name__ == '__main__':
     # Shared PORT 4520 as per specification
@@ -132,6 +165,6 @@ if __name__ == '__main__':
     host = os.getenv('HOST', '0.0.0.0')
     log_event('public_api', f"Public API starting on {host}:{port}")
     try:
-        app.run(host=host, port=port, debug=True)
+        app.run(host=host, port=port, debug=False) # debug=False to avoid double thread start in some envs
     finally:
         log_event('public_api', "Public API stopped")

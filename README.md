@@ -70,6 +70,7 @@ This application uses a dual-API architecture. You can start the appropriate API
     - **Windows**: `winget install ffmpeg`
 - If you see memory errors, ensure the transcription server has at least 2GB of RAM to load the Whisper `base` model.
 - The script handles `pytubefix` and `whisper` installations automatically if permissions allow.
+- **Proxy Timeouts**: If serving via Nginx or similar, you might encounter 504 Gateway Timeouts for long videos. As of v0.0.1+ (Async Update), the application handles this by processing transcription in the background and polling for results from the frontend. No special Nginx configuration is required, but ensure `client_max_body_size` and other standard limits are appropriate.
 
 ## Automated Versioning
 The project uses an automated versioning system. Every time you commit, a Git pre-commit hook runs `scripts/bump_version.py` to increment the patch version. 
