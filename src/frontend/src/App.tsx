@@ -170,7 +170,7 @@ const App = () => {
             )}
             {/* Navigation - Logic could be expanded here */}
             <nav className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center z-50">
-                <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <a href="/transcribe_youtube/app" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
                         <Youtube size={18} className="text-background" />
                     </div>
