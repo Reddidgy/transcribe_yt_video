@@ -10,7 +10,7 @@ os.makedirs(LOGS_DIR, exist_ok=True)
 os.makedirs(VISITS_DIR, exist_ok=True)
 
 def log_api_activity(method, endpoint, status_code, message=""):
-    """Logs general API activity to src/backend/api/logs."""
+    """Logs general API activity to src/backend/logs."""
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_entry = f"[{timestamp}] {method} {endpoint} - Status: {status_code} - {message}\n"
     
