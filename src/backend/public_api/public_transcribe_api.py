@@ -51,7 +51,8 @@ def get_version():
         # Log visit
         client_ip = request.remote_addr
         user_agent = request.headers.get('User-Agent', 'Unknown')
-        log_visit(client_ip, user_agent)
+        visitor_id = request.headers.get('X-Visitor-ID')
+        log_visit(client_ip, user_agent, visitor_id)
 
         version_file = os.path.join(current_dir, '..', '..', '..', 'version')
         if not os.path.exists(version_file):

@@ -6,7 +6,7 @@ import json
 current_file_dir = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(current_file_dir, '..', '..'))
 LOGS_DIR = os.path.join(PROJECT_ROOT, 'logs')
-VISITS_DIR = os.path.join(current_file_dir, 'user_visits_logs')
+VISITS_DIR = os.path.join(LOGS_DIR, 'visits')
 
 # Ensure directories exist
 os.makedirs(LOGS_DIR, exist_ok=True)
@@ -44,10 +44,11 @@ def log_event(api_type, message):
     except IOError as e:
         print(f"Error writing to log file {log_file}: {e}")
 
-def log_visit(ip, user_agent):
+def log_visit(ip, user_agent, visitor_id=None):
     """
     Logs every user visit.
     Increments total count in visits_count and logs unique info in unique_visits.json.
+    Uniqueness is based on visitor_id (if provided) or IP + User-Agent.
     """
     count_file = os.path.join(VISITS_DIR, 'visits_count')
     unique_file = os.path.join(VISITS_DIR, 'unique_visits.json')
@@ -75,15 +76,24 @@ def log_visit(ip, user_agent):
         except (json.JSONDecodeError, ValueError):
             unique_visits = []
 
-    # Check for uniqueness based on IP and User-Agent
+    # Check for uniqueness
     is_unique = True
-    for v in unique_visits:
-        if v.get('ip') == ip and v.get('user_agent') == user_agent:
-            is_unique = False
-            break
+    if visitor_id:
+        # Preferred method: Client-side persistent ID
+        for v in unique_visits:
+            if v.get('visitor_id') == visitor_id:
+                is_unique = False
+                break
+    else:
+        # Fallback: IP and User-Agent
+        for v in unique_visits:
+            if v.get('ip') == ip and v.get('user_agent') == user_agent:
+                is_unique = False
+                break
             
     if is_unique:
         new_unique = {
+            "visitor_id": visitor_id,
             "ip": ip,
             "user_agent": user_agent,
             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -95,7 +105,7 @@ def log_visit(ip, user_agent):
     return True
 
 def get_visits_count():
-    """Returns the total count from user_visits_logs/visits_count."""
+    """Returns the total count from root logs/visits/visits_count."""
     count_file = os.path.join(VISITS_DIR, 'visits_count')
     if not os.path.exists(count_file):
         return 0

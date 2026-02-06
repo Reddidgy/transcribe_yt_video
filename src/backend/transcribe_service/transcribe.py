@@ -8,11 +8,11 @@ from logging.handlers import RotatingFileHandler
 
 # Setup Logging
 def setup_logger():
-    # Ensure logs directory exists (now in the same dir as the script for reliability)
+    # Ensure logs directory exists at project root
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    log_dir = os.path.join(current_dir, "logs")
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    project_root = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
+    log_dir = os.path.join(project_root, "logs")
+    os.makedirs(log_dir, exist_ok=True)
 
     log_file = os.path.join(log_dir, "transcribe.log")
 

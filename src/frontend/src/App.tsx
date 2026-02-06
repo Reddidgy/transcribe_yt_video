@@ -23,6 +23,15 @@ const App = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const getVisitorId = () => {
+        let id = localStorage.getItem('visitorId');
+        if (!id) {
+            id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('visitorId', id);
+        }
+        return id;
+    };
+
     // Fetch version and visits count on mount
     useEffect(() => {
         if (initializedRef.current) return;
@@ -30,8 +39,11 @@ const App = () => {
 
         const initApp = async () => {
             try {
+                const visitorId = getVisitorId();
                 // Get version (also logs visit)
-                const versionResponse = await fetch(`${import.meta.env.VITE_API_URL}/get_version`);
+                const versionResponse = await fetch(`${import.meta.env.VITE_API_URL}/get_version`, {
+                    headers: { 'X-Visitor-ID': visitorId }
+                });
                 if (versionResponse.ok) {
                     const data = await versionResponse.json();
                     setVersion(data.version);
