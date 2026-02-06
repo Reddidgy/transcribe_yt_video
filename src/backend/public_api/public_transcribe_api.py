@@ -15,7 +15,7 @@ sys.path.append(os.path.join(current_dir, '..'))
 # Load environment variables from project root
 load_dotenv(os.path.join(project_root, '.env'))
 
-from logger import log_api_activity, log_visit, get_visits_count
+from logger import log_api_activity, log_visit, get_visits_count, log_event
 
 app = Flask(__name__)
 CORS(app)
@@ -32,7 +32,11 @@ def before_request_logging():
 @app.after_request
 def after_request_logging(response):
     if request.method != 'OPTIONS':
-        log_api_activity(request.method, request.path, response.status_code)
+        payload = None
+        if request.is_json:
+            payload = request.get_json(silent=True)
+            # Mask sensitive data if any (none expected here yet, but good practice)
+        log_api_activity('public_api', request.method, request.path, response.status_code, payload=payload)
     return response
 
 @app.route('/get_version', methods=['GET'])
@@ -53,7 +57,7 @@ def get_version():
             
         return jsonify({"version": version})
     except Exception as e:
-        log_api_activity('GET', '/get_version', 500, str(e))
+        log_api_activity('public_api', 'GET', '/get_version', 500, str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/get_visits_count', methods=['GET'])
@@ -62,14 +66,14 @@ def get_visits_count_endpoint():
         count = get_visits_count()
         return jsonify({"visits_count": count})
     except Exception as e:
-        log_api_activity('GET', '/get_visits_count', 500, str(e))
+        log_api_activity('public_api', 'GET', '/get_visits_count', 500, str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/get_summary_prompt', methods=['GET'])
 def get_summary_prompt():
     try:
         if not os.path.exists(PROMPT_FILE):
-            log_api_activity('GET', '/get_summary_prompt', 404, "Prompt file not found")
+            log_api_activity('public_api', 'GET', '/get_summary_prompt', 404, "Prompt file not found")
             return jsonify({"error": "Prompt file not found"}), 404
             
         with open(PROMPT_FILE, 'r', encoding='utf-8') as f:
@@ -77,7 +81,7 @@ def get_summary_prompt():
             
         return jsonify({"summary_prompt": content})
     except Exception as e:
-        log_api_activity('GET', '/get_summary_prompt', 500, str(e))
+        log_api_activity('public_api', 'GET', '/get_summary_prompt', 500, str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/transcribe_yt_video', methods=['POST'])
@@ -109,14 +113,14 @@ def transcribe_video():
             return jsonify(response.json())
         else:
             error_msg = response.json().get('error', 'Hard API request failed')
-            log_api_activity('POST', '/transcribe_yt_video', response.status_code, error_msg)
+            log_api_activity('public_api', 'POST', '/transcribe_yt_video', response.status_code, error_msg, payload={"videoUrl": video_url})
             return jsonify({"error": error_msg}), response.status_code
             
     except requests.exceptions.RequestException as e:
-        log_api_activity('POST', '/transcribe_yt_video', 500, str(e))
+        log_api_activity('public_api', 'POST', '/transcribe_yt_video', 500, str(e), payload={"videoUrl": video_url})
         return jsonify({"error": f"Failed to connect to Hard API: {str(e)}"}), 500
     except Exception as e:
-        log_api_activity('POST', '/transcribe_yt_video', 500, str(e))
+        log_api_activity('public_api', 'POST', '/transcribe_yt_video', 500, str(e), payload={"videoUrl": video_url})
         return jsonify({"error": str(e)}), 500
     finally:
         if acquired:
@@ -126,4 +130,8 @@ if __name__ == '__main__':
     # Shared PORT 4520 as per specification
     port = int(os.getenv('PORT', 4520))
     host = os.getenv('HOST', '0.0.0.0')
-    app.run(host=host, port=port, debug=True)
+    log_event('public_api', f"Public API starting on {host}:{port}")
+    try:
+        app.run(host=host, port=port, debug=True)
+    finally:
+        log_event('public_api', "Public API stopped")

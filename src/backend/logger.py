@@ -2,21 +2,47 @@ import os
 import datetime
 import json
 
-LOGS_DIR = os.path.join(os.path.dirname(__file__), 'logs')
-VISITS_DIR = os.path.join(os.path.dirname(__file__), 'user_visits_logs')
+# Correctly locate the project root for logs
+current_file_dir = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(current_file_dir, '..', '..'))
+LOGS_DIR = os.path.join(PROJECT_ROOT, 'logs')
+VISITS_DIR = os.path.join(current_file_dir, 'user_visits_logs')
 
 # Ensure directories exist
 os.makedirs(LOGS_DIR, exist_ok=True)
 os.makedirs(VISITS_DIR, exist_ok=True)
 
-def log_api_activity(method, endpoint, status_code, message=""):
-    """Logs general API activity to src/backend/logs."""
+def log_api_activity(api_type, method, endpoint, status_code, message="", payload=None):
+    """
+    Logs general API activity to the project root's logs directory.
+    api_type: 'public_api' or 'hard_api'
+    """
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = f"[{timestamp}] {method} {endpoint} - Status: {status_code} - {message}\n"
+    log_file_base = 'public_api' if api_type == 'public_api' else 'hard_api'
+    log_file = os.path.join(LOGS_DIR, f"{log_file_base}-{datetime.datetime.now().strftime('%Y-%m-%d')}.log")
     
-    log_file = os.path.join(LOGS_DIR, f"api_{datetime.datetime.now().strftime('%Y-%m-%d')}.log")
-    with open(log_file, 'a', encoding='utf-8') as f:
-        f.write(log_entry)
+    payload_str = f" - Payload: {json.dumps(payload)}" if payload else ""
+    log_entry = f"[{timestamp}] {method} {endpoint} - Status: {status_code} - {message}{payload_str}\n"
+    
+    try:
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(log_entry)
+    except IOError as e:
+        print(f"Error writing to log file {log_file}: {e}")
+
+def log_event(api_type, message):
+    """Logs a general event message."""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_file_base = 'public_api' if api_type == 'public_api' else 'hard_api'
+    log_file = os.path.join(LOGS_DIR, f"{log_file_base}-{datetime.datetime.now().strftime('%Y-%m-%d')}.log")
+    
+    log_entry = f"[{timestamp}] EVENT: {message}\n"
+    
+    try:
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(log_entry)
+    except IOError as e:
+        print(f"Error writing to log file {log_file}: {e}")
 
 def log_visit(ip, user_agent):
     """

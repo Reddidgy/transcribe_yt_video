@@ -13,7 +13,7 @@ sys.path.append(os.path.join(current_dir, '..'))
 # Load environment variables from project root
 load_dotenv(os.path.join(project_root, '.env'))
 
-from logger import log_api_activity
+from logger import log_api_activity, log_event
 
 app = Flask(__name__)
 CORS(app)
@@ -25,7 +25,10 @@ def before_request_logging():
 @app.after_request
 def after_request_logging(response):
     if request.method != 'OPTIONS':
-        log_api_activity(request.method, request.path, response.status_code)
+        payload = None
+        if request.is_json:
+            payload = request.get_json(silent=True)
+        log_api_activity('hard_api', request.method, request.path, response.status_code, payload=payload)
     return response
 
 @app.route('/get_version', methods=['GET'])
@@ -45,7 +48,7 @@ def get_version():
 
         return jsonify({"version": version})
     except Exception as e:
-        log_api_activity('GET', '/get_version', 500, str(e))
+        log_api_activity('hard_api', 'GET', '/get_version', 500, str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route('/transcribe_yt_video', methods=['POST'])
@@ -75,11 +78,15 @@ def transcribe_video():
             return jsonify({"error": "Transcription failed. Check backend logs for details."}), 500
             
     except Exception as e:
-        log_api_activity('POST', '/transcribe_yt_video', 500, str(e))
+        log_api_activity('hard_api', 'POST', '/transcribe_yt_video', 500, str(e), payload={"videoUrl": video_url})
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     # Shared PORT 4520 as per specification
     port = int(os.getenv('PORT', 4520))
     host = os.getenv('HOST', '0.0.0.0')
-    app.run(host=host, port=port, debug=True)
+    log_event('hard_api', f"Hard API starting on {host}:{port}")
+    try:
+        app.run(host=host, port=port, debug=True)
+    finally:
+        log_event('hard_api', "Hard API stopped")
